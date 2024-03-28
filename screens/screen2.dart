@@ -1,5 +1,7 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:restapi/services/httpservice.dart';
 import 'package:sizer/sizer.dart';
@@ -18,9 +20,10 @@ class _Screen2State extends State<Screen2> {
   var isLoaded = false;
   var hasMore = true;
   var currentAlbum = 1;
+  var lazyLoading = false;
   List<Photo> photos = [];
 
-  void getData() async {
+  Future<void> getData() async {
     isLoaded = false;
 
     // loading only 50 at a time
@@ -39,12 +42,45 @@ class _Screen2State extends State<Screen2> {
           photos.addAll(loadedphotos); // add lazy loaded photos to list
         });
       }
+    } else {
+      // if there was an error, try again
+      if (kDebugMode) {
+        print("try again for album $currentAlbum");
+      }
+      await getData();
+    }
+  }
+
+  Future<void> getAllData() async {
+    isLoaded = false;
+    if (kDebugMode) {
+      print("loading all photos");
+    }
+    // loading all 5000 photos at once
+    var loadedphotos = await HttpService().getPhotos();
+    if (loadedphotos != null) {
+      if (kDebugMode) {
+        print("all ${loadedphotos.length} photos loaded");
+      }
+      setState(() {
+        isLoaded = true;
+        hasMore = false;
+        photos.addAll(loadedphotos);
+      });
+    } else {
+      if (kDebugMode) {
+        print("some error occured. No photos were loaded");
+      }
     }
   }
 
   @override
   void initState() {
-    getData();
+    if (lazyLoading) {
+      getData();
+    } else {
+      getAllData();
+    }
     super.initState();
   }
 
@@ -86,8 +122,7 @@ class _Screen2State extends State<Screen2> {
                     physics: PageScrollPhysics(),
                     itemCount: hasMore ? photos.length + 1 : photos.length,
                     itemBuilder: (context, index) {
-                      if (index >= photos.length) {
-                        // loading more photos
+                      if (lazyLoading && index >= photos.length) {
                         if (!isLoaded || index == photos.length) {
                           currentAlbum++;
                           print("get photos for $currentAlbum");
@@ -106,7 +141,8 @@ class _Screen2State extends State<Screen2> {
                       return Container(
                         decoration: BoxDecoration(
                           image: DecorationImage(
-                            image: NetworkImage(photos[index].url),
+                            image:
+                                CachedNetworkImageProvider(photos[index].url),
                           ),
                         ),
                         child: Column(
