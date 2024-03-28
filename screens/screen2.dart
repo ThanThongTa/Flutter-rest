@@ -125,7 +125,9 @@ class _Screen2State extends State<Screen2> {
                       if (lazyLoading && index >= photos.length) {
                         if (!isLoaded || index == photos.length) {
                           currentAlbum++;
-                          print("get photos for $currentAlbum");
+                          if (kDebugMode) {
+                            print("get photos for $currentAlbum");
+                          }
                           getData();
                         }
 
