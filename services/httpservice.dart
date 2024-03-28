@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 // class to get the posts and photos from the jsonplaceholder
 class HttpService {
   final postsURL = Uri.parse("https://jsonplaceholder.typicode.com/posts");
+  final photoURL = Uri.parse("https://jsonplaceholder.typicode.com/photos");
   final client = http.Client();
 
   Uri getPhotosUriForAlbum({int currentAlbum = 1}) {
@@ -24,6 +25,12 @@ class HttpService {
     return getList(
         sourceUri: getPhotosUriForAlbum(currentAlbum: album),
         parseFunction: photoFromJson);
+  }
+
+  // function to get the photos
+  //  can also return null, if error happens
+  Future<List<Photo>?> getPhotos() {
+    return getList(sourceUri: photoURL, parseFunction: photoFromJson);
   }
 
   // generic, to get photos and posts from the same function
